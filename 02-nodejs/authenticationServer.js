@@ -29,9 +29,96 @@
   Testing the server - run `npm run test-authenticationServer` command in terminal
  */
 
-const express = require("express")
+const express = require("express");
 const PORT = 3000;
 const app = express();
 // write your logic here, DONT WRITE app.listen(3000) when you're running tests, the tests will automatically start the server
+
+// To convert request body to json
+app.use(express.json());
+
+const users = [];
+let userEmails = new Set();
+
+/**
+ * User Signup
+ */
+app.post("/signup", (req, res) => {
+  let newUser = req.body;
+
+  if (userEmails.has(newUser.email))
+    return res.status(400).send(`Username ${newUser.email} already exists!`);
+
+  users.push(newUser);
+  userEmails.add(newUser.email);
+
+  res.status(201).send("Signup successful");
+});
+
+/**
+ * User login
+ */
+function isValidUser(email, password) {
+  // Check if user with email has an account
+  if (userEmails.has(email)) {
+    const savedUser = users.find((user) => user.email === email);
+    //  Check if the password matches with login password
+    if (savedUser.password === password) {
+      return savedUser;
+    }
+  }
+
+  return;
+}
+app.post("/login", (req, res) => {
+  const loginEmail = req.body.email;
+  const loginPassword = req.body.password;
+
+  // Validate email and password of user
+  const savedUser = isValidUser(loginEmail, loginPassword);
+
+  return savedUser
+    ? res.json({
+        email: savedUser.email,
+        firstName: savedUser.firstName,
+        lastName: savedUser.lastName,
+      })
+    : res.status(401).send("Invalid credentials!");
+});
+
+/**
+ * Get user data
+ */
+app.get("/data", (req, res) => {
+  const loginEmail = req.headers.email;
+  const loginPassword = req.headers.password;
+
+  if (!isValidUser(loginEmail, loginPassword)) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const usersData = users.reduce((acc, user) => {
+    acc.push({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
+
+    return acc;
+  }, []);
+
+  const dataObj = { users: usersData };
+
+  res.json(dataObj);
+});
+
+/**
+ * For any other invalid routes
+ */
+app.use((req, res, next) => {
+  res.status(404).send();
+});
+
+// app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 
 module.exports = app;
