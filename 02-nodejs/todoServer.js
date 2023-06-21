@@ -46,57 +46,48 @@ const port = 3000;
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 
-let id = 0;
+let id = 1;
 const todos = [];
 
 /**
  * Get all todos
  */
 app.get("/todos", (req, res) => {
-  return res.send(todos);
+  return res.json(todos);
 });
 
 /**
  * Get todo by id
  */
 app.get("/todos/:id", (req, res) => {
-  const reqId = req.params.id;
+  const reqId = Number(req.params.id);
 
-  const result = todos.filter((todo) => todo.id.toString() === reqId);
+  const result = todos.find((todo) => todo.id === reqId);
 
-  return result.length
-    ? res.send(result[0])
-    : res.status(404).send("Todo not found!");
+  return result ? res.json(result) : res.status(404).send("Todo not found!");
 });
 
 /**
  * Create a todo
  */
 app.post("/todos", (req, res) => {
-  let todo = req.body;
-  todo = { id: id++, ...todo };
-  todos.push(todo);
-  return res.send("Todo created!");
+  let newTodo = req.body;
+  newTodo = {
+    id: id++,
+    ...newTodo,
+  };
+  todos.push(newTodo);
+  return res.status(201).json(newTodo);
 });
 
 /**
  * Update todo by id
  */
-function getTodoIndex(todoId) {
-  for (let i = 0; i < todos.length; i++) {
-    if (todos[i].id === todoId) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
 app.put("/todos/:id", (req, res) => {
   const todoId = Number(req.params.id);
   const todoUpdate = req.body;
 
-  const todoIndex = getTodoIndex(todoId);
+  const todoIndex = todos.findIndex((todo) => todo.id === todoId);
 
   if (todoIndex === -1) return res.status(404).send("Todo not found!");
 
@@ -105,7 +96,7 @@ app.put("/todos/:id", (req, res) => {
 
   todos[todoIndex] = todo;
 
-  return res.send(`Todo ${todoId} updated!`);
+  return res.json(todo);
 });
 
 /**
@@ -113,7 +104,7 @@ app.put("/todos/:id", (req, res) => {
  */
 app.delete("/todos/:id", (req, res) => {
   const todoId = Number(req.params.id);
-  const todoIndex = getTodoIndex(todoId);
+  const todoIndex = todos.findIndex((todo) => todo.id === todoId);
 
   if (todoIndex === -1) return res.status(404).send("Todo not found!");
 
@@ -122,6 +113,6 @@ app.delete("/todos/:id", (req, res) => {
   return res.send(`Todo ${todoId} deleted!`);
 });
 
-app.listen(port, () => console.log(`Listening on port ${port}`));
+// app.listen(port, () => console.log(`Listening on port ${port}`));
 
 module.exports = app;
