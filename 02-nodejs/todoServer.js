@@ -43,17 +43,23 @@ const express = require("express");
 const app = express();
 const port = 3000;
 
+const fs = require("fs");
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
-
-let id = 1;
-const todos = [];
 
 /**
  * Get all todos
  */
 app.get("/todos", (req, res) => {
-  return res.json(todos);
+  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
+
+    res.json(JSON.parse(data).todos);
+  });
 });
 
 /**
@@ -62,22 +68,50 @@ app.get("/todos", (req, res) => {
 app.get("/todos/:id", (req, res) => {
   const reqId = Number(req.params.id);
 
-  const result = todos.find((todo) => todo.id === reqId);
+  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
 
-  return result ? res.json(result) : res.status(404).send("Todo not found!");
+    const todos = JSON.parse(data).todos;
+    const result = todos.find((todo) => todo.id === reqId);
+
+    return result ? res.json(result) : res.status(404).send("Todo not found!");
+  });
 });
 
 /**
  * Create a todo
  */
 app.post("/todos", (req, res) => {
-  let newTodo = req.body;
-  newTodo = {
-    id: id++,
-    ...newTodo,
-  };
-  todos.push(newTodo);
-  return res.status(201).json(newTodo);
+  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+
+    let { id, todos } = JSON.parse(data);
+
+    let newTodo = {
+      id: id++,
+      title: req.body.title,
+      description: req.body.description,
+    };
+
+    todos.push(newTodo);
+
+    fs.writeFile(
+      "./02-nodejs/files/todoDB.json",
+      JSON.stringify({ id, todos }),
+      (err) => {
+        if (err) {
+          return res.status(500).send(err);
+        }
+
+        res.status(201).json(newTodo);
+      }
+    );
+  });
 });
 
 /**
@@ -87,16 +121,35 @@ app.put("/todos/:id", (req, res) => {
   const todoId = Number(req.params.id);
   const todoUpdate = req.body;
 
-  const todoIndex = todos.findIndex((todo) => todo.id === todoId);
+  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
 
-  if (todoIndex === -1) return res.status(404).send("Todo not found!");
+    const { id, todos } = JSON.parse(data);
 
-  let todo = todos[todoIndex];
-  todo = { ...todo, ...todoUpdate };
+    const todoIndex = todos.findIndex((todo) => todo.id === todoId);
 
-  todos[todoIndex] = todo;
+    if (todoIndex === -1) return res.status(404).send("Todo not found!");
 
-  return res.json(todo);
+    let todo = todos[todoIndex];
+    todo = { ...todo, ...todoUpdate };
+
+    todos[todoIndex] = todo;
+
+    fs.writeFile(
+      "./02-nodejs/files/todoDB.json",
+      JSON.stringify({ id, todos }),
+      (err) => {
+        if (err) {
+          return res.status(500).send(err);
+        }
+
+        return res.json(todo);
+      }
+    );
+  });
 });
 
 /**
@@ -104,15 +157,34 @@ app.put("/todos/:id", (req, res) => {
  */
 app.delete("/todos/:id", (req, res) => {
   const todoId = Number(req.params.id);
-  const todoIndex = todos.findIndex((todo) => todo.id === todoId);
 
-  if (todoIndex === -1) return res.status(404).send("Todo not found!");
+  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
 
-  todos.splice(todoIndex, 1);
+    const { id, todos } = JSON.parse(data);
 
-  return res.send(`Todo ${todoId} deleted!`);
+    const todoIndex = todos.findIndex((todo) => todo.id === todoId);
+
+    if (todoIndex === -1) return res.status(404).send("Todo not found!");
+
+    todos.splice(todoIndex, 1);
+
+    fs.writeFile(
+      "./02-nodejs/files/todoDB.json",
+      JSON.stringify({ id, todos }),
+      (err) => {
+        if (err) {
+          return res.status(500).send(err);
+        }
+
+        return res.send(`Todo ${todoId} deleted!`);
+      }
+    );
+  });
 });
 
-// app.listen(port, () => console.log(`Listening on port ${port}`));
+app.listen(port, () => console.log(`Listening on port ${port}`));
 
 module.exports = app;
