@@ -48,11 +48,14 @@ const fs = require("fs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 
+const cors = require("cors");
+app.use(cors());
+
 /**
  * Get all todos
  */
 app.get("/todos", (req, res) => {
-  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+  fs.readFile("./files/todoDB.json", "utf-8", (err, data) => {
     if (err) {
       res.status(500).send(err);
       return;
@@ -68,7 +71,7 @@ app.get("/todos", (req, res) => {
 app.get("/todos/:id", (req, res) => {
   const reqId = Number(req.params.id);
 
-  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+  fs.readFile("./files/todoDB.json", "utf-8", (err, data) => {
     if (err) {
       res.status(500).send(err);
       return;
@@ -85,7 +88,7 @@ app.get("/todos/:id", (req, res) => {
  * Create a todo
  */
 app.post("/todos", (req, res) => {
-  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+  fs.readFile("./files/todoDB.json", "utf-8", (err, data) => {
     if (err) {
       return res.status(500).send(err);
     }
@@ -101,14 +104,14 @@ app.post("/todos", (req, res) => {
     todos.push(newTodo);
 
     fs.writeFile(
-      "./02-nodejs/files/todoDB.json",
+      "./files/todoDB.json",
       JSON.stringify({ id, todos }),
       (err) => {
         if (err) {
           return res.status(500).send(err);
         }
 
-        res.status(201).json(newTodo);
+        res.status(201).json(todos);
       }
     );
   });
@@ -121,7 +124,7 @@ app.put("/todos/:id", (req, res) => {
   const todoId = Number(req.params.id);
   const todoUpdate = req.body;
 
-  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+  fs.readFile("./files/todoDB.json", "utf-8", (err, data) => {
     if (err) {
       res.status(500).send(err);
       return;
@@ -139,7 +142,7 @@ app.put("/todos/:id", (req, res) => {
     todos[todoIndex] = todo;
 
     fs.writeFile(
-      "./02-nodejs/files/todoDB.json",
+      "./files/todoDB.json",
       JSON.stringify({ id, todos }),
       (err) => {
         if (err) {
@@ -158,7 +161,7 @@ app.put("/todos/:id", (req, res) => {
 app.delete("/todos/:id", (req, res) => {
   const todoId = Number(req.params.id);
 
-  fs.readFile("./02-nodejs/files/todoDB.json", "utf-8", (err, data) => {
+  fs.readFile("./files/todoDB.json", "utf-8", (err, data) => {
     if (err) {
       return res.status(500).send(err);
     }
@@ -172,14 +175,14 @@ app.delete("/todos/:id", (req, res) => {
     todos.splice(todoIndex, 1);
 
     fs.writeFile(
-      "./02-nodejs/files/todoDB.json",
+      "./files/todoDB.json",
       JSON.stringify({ id, todos }),
       (err) => {
         if (err) {
           return res.status(500).send(err);
         }
 
-        return res.send(`Todo ${todoId} deleted!`);
+        return res.json(todos);
       }
     );
   });
